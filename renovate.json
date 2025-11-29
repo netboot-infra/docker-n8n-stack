@@ -1,0 +1,40 @@
+{
+    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "extends": [
+        "config:recommended",
+        "docker:pinDigests",
+        ":semanticCommitsDisabled",
+        ":rebaseStalePrs",
+        ":disableRateLimiting",
+        ":disableDependencyDashboard",
+        ":semanticCommits"
+    ],
+    "timezone": "Europe/Paris",
+    "docker-compose": {
+        "fileMatch": [
+            "(^|/)(?:docker-)?compose[^/]*\\.ya?ml$",
+            "(.*)ya?ml$"
+        ]
+    },
+    "ignoreTests": true,
+    "packageRules": [
+        {
+            "groupName": "all non-major dependencies",
+            "groupSlug": "all-minor-patch-digest",
+            "matchUpdateTypes": [
+                "minor",
+                "patch",
+                "digest"
+            ],
+            "minimumReleaseAge": "1 day",
+            "automerge": true,
+            "automergeType": "branch",
+            "automergeSchedule": [
+                "* 0-3 * * *"
+            ],
+            "matchPackageNames": [
+                "*"
+            ]
+        }
+    ]
+}
