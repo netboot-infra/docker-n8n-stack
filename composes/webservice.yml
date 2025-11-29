@@ -1,0 +1,71 @@
+x-common-deploy: &common-deploy
+  restart_policy:
+    condition: on-failure
+    delay: 5s
+    window: 120s
+x-common-env: &common-env
+  PGID: 1000
+  PUID: 1000
+  TZ: Europe/Paris
+
+networks:
+  backend: {}
+  public:
+    external: true
+  
+services:
+  webservice:
+    cap_drop:
+      - ALL
+    deploy:
+      !!merge <<: *common-deploy
+      labels:
+        - "traefik.enable=true"
+        - "traefik.swarm.lbswarm=true"
+        - "traefik.http.routers.n8n.rule=Host(`n8n.$DOMAIN_NAME`)"
+        - "traefik.http.routers.n8n.entrypoints=https"
+        - "traefik.http.services.n8n.loadbalancer.server.port=5678"
+    environment:
+      !!merge <<: *common-env
+      DB_POSTGRESDB_DATABASE: postgres
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_PASSWORD: $N8N_DB_PASSWORD
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_USER: postgres
+      # Database configuration
+      DB_TYPE: postgresdb
+      # Setting this variable to an empty value will prevent n8n from loading the default frontend hooks file from n8n servers 
+      EXTERNAL_FRONTEND_HOOKS_URLS:
+      # Setting this variable to an empty value overrides the default server-side telemetry configuration.
+      N8N_DIAGNOSTICS_CONFIG_BACKEND:
+      # Setting this variable to an empty value overrides the default telemetry configuration for the front end.
+      N8N_DIAGNOSTICS_CONFIG_FRONTEND:
+      # Setting this environment variable will prevent n8n from sending telemetry to its servers.
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: true
+      N8N_HOST: n8n.$DOMAIN_NAME
+      # This will prevent n8n from fetching onboarding prompts.
+      N8N_ONBOARDING_FLOW_DISABLED: "true"
+      N8N_PERSONALIZATION_ENABLED: "false"
+      N8N_PORT: 5678
+      N8N_PROTOCOL: https
+      N8N_RUNNERS_ENABLED: true
+      N8N_SECURE_COOKIE: true
+      # Disables the workflow templates in an n8n instance that are otherwise obtained from n8n servers.
+      N8N_TEMPLATES_ENABLED: "false"
+      # Prevents n8n from retrieving version information from its servers.
+      N8N_VERSION_NOTIFICATIONS_ENABLED: "false"
+      # Service configuration
+      NODE_ENV: production
+      WEBHOOK_TUNNEL_URL: https://n8n.$DOMAIN_NAME
+      WEBHOOK_URL: https://n8n.$DOMAIN_NAME
+    image: docker.netboot.app/n8n:latest
+    networks:
+      - public
+      - backend
+    security_opt:
+      - no-new-privileges:true
+    user: "1000:1000"
+    volumes:
+      - $STORAGE_PATH/n8n/data:/home/node/.n8n
+      - $STORAGE_PATH/n8n/files:/files:rw

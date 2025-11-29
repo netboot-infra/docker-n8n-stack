@@ -1,0 +1,65 @@
+name: Deploy Stack Deployment
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        
+      - name: Configure SSH for remote Docker host
+        env:
+          SSH_CONFIG: |
+            Host $REMOTE_DOCKER_HOST
+                HostName $REMOTE_DOCKER_HOST
+                User manager
+                IdentityFile ~/.ssh/docker.key
+          REMOTE_DOCKER_HOST: ${{ vars.REMOTE_DOCKER_HOST }}
+          REMOTE_DOCKER_SSH_PORT: ${{ vars.REMOTE_DOCKER_SSH_PORT }}
+          REMOTE_DOCKER_SSH_PUBLIC_KEY: ${{ vars.REMOTE_DOCKER_SSH_PUBLIC_KEY }}
+          REMOTE_DOCKER_SSH_PRIVATE_KEY: ${{ secrets.REMOTE_DOCKER_SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: "[$REMOTE_DOCKER_HOST]:$REMOTE_DOCKER_SSH_PORT $REMOTE_DOCKER_SSH_PUBLIC_KEY"
+        run: |
+          mkdir -m 0700 ~/.ssh
+          echo "\${SSH_CONFIG}" | envsubst | envsubst > ~/.ssh/config
+          echo "\${SSH_KNOWN_HOSTS}" | envsubst | envsubst > ~/.ssh/known_hosts
+          echo "${REMOTE_DOCKER_SSH_PRIVATE_KEY}" | base64 -d > ~/.ssh/docker.key
+          chmod 600 ~/.ssh/docker.key
+
+      - name: Test connection to remote Docker host
+        env:
+          DOCKER_HOST: "ssh://${{ vars.REMOTE_DOCKER_HOST }}:${{ vars.REMOTE_DOCKER_SSH_PORT }}"
+        run: docker version
+
+      - name: Print stack configuration
+        env:
+          # Global variables
+          DOMAIN_NAME: ${{ vars.DOMAIN_NAME }}
+          STORAGE_PATH: ${{ vars.STORAGE_PATH }}
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          SUDO_PASSWORD: ${{ secrets.SUDO_PASSWORD }}
+          DOCKER_HOST: "ssh://${{ vars.REMOTE_DOCKER_HOST }}:${{ vars.REMOTE_DOCKER_SSH_PORT }}"
+          # N8n variables
+          N8N_DB_PASSWORD: ${{ secrets.N8N_DB_PASSWORD }}
+        run: |
+          yq ea '. as $item ireduce ({}; . *+ $item)' composes/* | envsubst
+
+      - name: Deploy stack to remote Docker host
+        env:
+          # Global variables
+          DOMAIN_NAME: ${{ vars.DOMAIN_NAME }}
+          STORAGE_PATH: ${{ vars.STORAGE_PATH }}
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          SUDO_PASSWORD: ${{ secrets.SUDO_PASSWORD }}
+          DOCKER_HOST: "ssh://${{ vars.REMOTE_DOCKER_HOST }}:${{ vars.REMOTE_DOCKER_SSH_PORT }}"
+          # N8n variables
+          N8N_DB_PASSWORD: ${{ secrets.N8N_DB_PASSWORD }}
+        run: |
+          yq ea '. as $item ireduce ({}; . *+ $item)' composes/* | envsubst | docker stack deploy --compose-file - n8n
