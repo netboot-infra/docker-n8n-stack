@@ -33,7 +33,11 @@ services:
     security_opt:
       - no-new-privileges:true
     tmpfs:
-      - /var/run/postgresql:rw,uid=1000,gid=1000
+      # For read-only filesystem, need to create a volume/tmpfs for PostgreSQL to run its much
+      # needed configuration. The read-only flag does not make volumes and tmpfs read-only.
+      - /tmp:noexec
+      - /run:noexec
+      - /run/postgresql:noexec
     user: "1000:1000"
     volumes:
       - $STORAGE_PATH/n8n/database:/var/lib/postgresql/data
