@@ -57,6 +57,7 @@ services:
       N8N_VERSION_NOTIFICATIONS_ENABLED: "false"
       # Service configuration
       NODE_ENV: "production"
+      N8N_PROXY_HOPS: "1"
       WEBHOOK_TUNNEL_URL: "https://n8n.$DOMAIN_NAME"
       WEBHOOK_URL: "https://n8n.$DOMAIN_NAME"
     image: "docker.netboot.app/n8n:latest"
