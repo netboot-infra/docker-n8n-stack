@@ -1,0 +1,23 @@
+x-common-deploy: &common-deploy
+  restart_policy:
+    condition: on-failure
+    delay: 5s
+    window: 120s
+x-common-env: &common-env
+  USERID: 1000
+  GROUPID: 1000
+  TZ: Europe/Paris
+
+networks:
+  backend: {}
+
+services:
+  postgres:
+    image: dperson/torproxy
+    networks:
+      - backend
+    environment:
+      !!merge <<: *common-env
+      LOCATION: "FR"
+    deploy:
+      !!merge <<: *common-deploy
