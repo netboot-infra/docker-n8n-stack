@@ -12,7 +12,7 @@ networks:
   backend: {}
 
 services:
-  postgres:
+  torproxy:
     image: dperson/torproxy
     networks:
       - backend
