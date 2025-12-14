@@ -1,0 +1,20 @@
+x-common-deploy: &common-deploy
+  restart_policy:
+    condition: on-failure
+    delay: 5s
+    window: 120s
+x-common-env: &common-env
+  TZ: Europe/Paris
+
+networks:
+  backend: {}
+
+services:
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    networks:
+      - backend
+    environment:
+      !!merge <<: *common-env
+    deploy:
+      !!merge <<: *common-deploy
