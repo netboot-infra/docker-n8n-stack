@@ -60,7 +60,7 @@ services:
       N8N_PROXY_HOPS: "1"
       WEBHOOK_TUNNEL_URL: "https://n8n.$DOMAIN_NAME"
       WEBHOOK_URL: "https://n8n.$DOMAIN_NAME"
-    image: "docker.netboot.app/n8n:latest"
+    image: "ghcr.io/netboot-infra/n8n:v2.0.2"
     networks:
       - public
       - backend
